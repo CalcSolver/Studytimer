@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus & Study Timer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+      overflow: hidden;
+    }
+
+    /* Normal Study Timer Layout */
+    .app-viewport {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      padding: 20px;
+    }
+
+    .timer-card {
+      background-color: #1e293b;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      width: 100%;
+      max-width: 420px;
+      border: 1px solid #334155;
+    }
+
+    .timer-card h1 {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      color: #38bdf8;
+    }
+
+    .timer-card p {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+
+    .time-display {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+      color: #f1f5f9;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .input-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .time-input {
+      width: 140px;
+      padding: 12px;
+      font-size: 1.2rem;
+      text-align: center;
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: #f8fafc;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .time-input:focus {
+      border-color: #38bdf8;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      background-color: #0284c7;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: #0369a1;
+    }
+
+    /* Unlocked Proxy Container Styles */
+    .unlocked-view {
+      display: none;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: #0f172a;
+      z-index: 100;
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      background-color: #1e293b;
+      border-bottom: 1px solid #334155;
+      gap: 12px;
+    }
+
+    .url-form {
+      display: flex;
+      flex: 1;
+      gap: 10px;
+    }
+
+    .url-input {
+      flex: 1;
+      padding: 10px 16px;
+      font-size: 0.95rem;
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #f8fafc;
+      outline: none;
+    }
+
+    .url-input:focus {
+      border-color: #38bdf8;
+    }
+
+    .btn-go {
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      background-color: #38bdf8;
+      color: #0f172a;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-go:hover {
+      background-color: #7dd3fc;
+    }
+
+    .iframe-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Timer Interface -->
+  <main class="app-viewport" id="timerViewport">
+    <div class="timer-card">
+      <h1>Study & Focus Timer</h1>
+      <p>Set a duration to begin your session</p>
+      
+      <div class="time-display" id="timerDisplay">25:00</div>
+
+      <div class="input-group">
+        <input 
+          type="text" 
+          id="timeInput" 
+          class="time-input" 
+          placeholder="MM:SS" 
+          value="25:00"
+          maxlength="5"
+          autocomplete="off"
+        />
+      </div>
+
+      <button class="btn" id="startBtn" onclick="handleStart()">Start Timer</button>
+    </div>
+  </main>
+
+  <!-- Unlocked Fullscreen Container -->
+  <div class="unlocked-view" id="unlockedView">
+    <header class="navbar">
+      <form class="url-form" onsubmit="loadFrameUrl(event)">
+        <input 
+          type="text" 
+          id="targetUrlInput" 
+          class="url-input" 
+          placeholder="Enter a URL (e.g. example.com) or search term..." 
+          required 
+          autocomplete="off"
+        />
+        <button type="submit" class="btn-go">Go</button>
+      </form>
+    </header>
+
+    <div class="iframe-container">
+      <!--
+        The sandbox attribute allows scripts and forms inside the frame while 
+        omitting 'allow-top-navigation', blocking any breakout or parent location overrides.
+      -->
+      <iframe 
+        id="contentFrame"
+        sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-popups-to-escape-sandbox"
+        src="about:blank"
+        title="Content View"
+      ></iframe>
+    </div>
+  </div>
+
+  <script>
+    const SECRET_TIME = "SECRET_TIME_HERE";
+    const PROXY_PREFIX = "PROXY_URL_HERE/";
+
+    let timerInterval = null;
+    let totalSeconds = 0;
+
+    function handleStart() {
+      const inputVal = document.getElementById("timeInput").value.trim();
+
+      // Check for secret unlock code
+      if (inputVal === SECRET_TIME) {
+        unlockHiddenContainer();
+        return;
+      }
+
+      // Standard Timer Functionality
+      parseAndStartTimer(inputVal);
+    }
+
+    function parseAndStartTimer(val) {
+      const parts = val.split(":");
+      if (parts.length !== 2) return;
+
+      const mins = parseInt(parts[0], 10);
+      const secs = parseInt(parts[1], 10);
+
+      if (isNaN(mins) || isNaN(secs)) return;
+
+      totalSeconds = (mins * 60) + secs;
+      if (totalSeconds <= 0) return;
+
+      if (timerInterval) clearInterval(timerInterval);
+
+      document.getElementById("startBtn").innerText = "Focusing...";
+      document.getElementById("startBtn").disabled = true;
+
+      timerInterval = setInterval(() => {
+        if (totalSeconds <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById("timerDisplay").innerText = "00:00";
+          document.getElementById("startBtn").innerText = "Start Timer";
+          document.getElementById("startBtn").disabled = false;
+          return;
+        }
+
+        totalSeconds--;
+        const m = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+        const s = String(totalSeconds % 60).padStart(2, "0");
+        document.getElementById("timerDisplay").innerText = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function unlockHiddenContainer() {
+      if (timerInterval) clearInterval(timerInterval);
+      document.getElementById("timerViewport").style.display = "none";
+      document.getElementById("unlockedView").style.display = "flex";
+    }
+
+    function loadFrameUrl(event) {
+      event.preventDefault();
+
+      const input = document.getElementById("targetUrlInput").value.trim();
+      if (!input) return;
+
+      let destination = "";
+      const urlPattern = /^(https?:\/\/)?([\w.-]+)+[\w\-_~:/?#[\]@!$&'()*+,;=.]+$/i;
+      const hasProtocol = /^https?:\/\//i.test(input);
+
+      if (hasProtocol) {
+        destination = input;
+      } else if (urlPattern.test(input) && input.includes(".")) {
+        destination = "https://" + input;
+      } else {
+        destination = "https://www.google.com/search?q=" + encodeURIComponent(input);
+      }
+
+      // Construct final URL with proxy prefix
+      const finalUrl = PROXY_PREFIX + destination;
+
+      // Update iframe without affecting browser history or main location
+      document.getElementById("contentFrame").src = finalUrl;
+    }
+  </script>
+</body>
+</html>
