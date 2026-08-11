@@ -31,7 +31,7 @@
       position: relative;
     }
 
-    /* Top Digital Clock */
+    /* Live Digital Clock */
     .digital-clock {
       position: absolute;
       top: 24px;
@@ -56,7 +56,7 @@
       border: 1px solid #334155;
     }
 
-    /* Editable Text Fields */
+    /* Editable Text Elements */
     .editable-title {
       font-size: 1.5rem;
       font-weight: 700;
@@ -149,7 +149,12 @@
       background-color: #475569;
     }
 
-    /* Unlocked Proxy Container */
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Unlocked Viewer Container */
     .unlocked-view {
       display: none;
       flex-direction: column;
@@ -219,12 +224,11 @@
 </head>
 <body>
 
+  <!-- Main Timer View -->
   <main class="app-viewport" id="timerViewport">
-    <!-- Live Digital Clock -->
     <div class="digital-clock" id="digitalClock">00:00:00 AM</div>
 
     <div class="timer-card">
-      <!-- Editable Title & Description -->
       <h1 class="editable-title" contenteditable="true" spellcheck="false">Study & Focus Timer</h1>
       <p class="editable-desc" contenteditable="true" spellcheck="false">Click here to edit your goal or session notes</p>
       
@@ -250,6 +254,7 @@
     </div>
   </main>
 
+  <!-- Unlocked Viewer View -->
   <div class="unlocked-view" id="unlockedView">
     <header class="navbar">
       <form class="url-form" onsubmit="loadFrameUrl(event)">
@@ -276,15 +281,15 @@
   </div>
 
   <script>
-    const SECRET_TIME = "12:34";
-    const PROXY_PREFIX = "https://0.catclass.net/";
+    // Unlock threshold configuration (e.g. "24:59")
+    const SECRET_TIME = "HI:There";
 
     let timerInterval = null;
     let totalSeconds = 0;
     let isPaused = false;
     let isRunning = false;
 
-    // Digital Clock Functionality
+    // Digital Clock Updates
     function updateDigitalClock() {
       const now = new Date();
       document.getElementById("digitalClock").innerText = now.toLocaleTimeString();
@@ -341,12 +346,7 @@
 
       isPaused = !isPaused;
       const pauseBtn = document.getElementById("pauseBtn");
-
-      if (isPaused) {
-        pauseBtn.innerText = "Resume";
-      } else {
-        pauseBtn.innerText = "Pause";
-      }
+      pauseBtn.innerText = isPaused ? "Resume" : "Pause";
     }
 
     function resetTimer() {
@@ -392,7 +392,8 @@
         destination = "https://www.google.com/search?q=" + encodeURIComponent(input);
       }
 
-      document.getElementById("contentFrame").src = PROXY_PREFIX + destination;
+      // Directly render the target URL into the iframe
+      document.getElementById("contentFrame").src = destination;
     }
   </script>
 </body>
